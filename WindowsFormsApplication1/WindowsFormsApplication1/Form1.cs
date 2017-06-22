@@ -47,9 +47,12 @@ namespace WindowsFormsApplication1
                 RegEx.Add(new TokenRegistrateEx("varT", @"(^([A-Za-z][A-Za-z0-9]*)$)"));
                 RegEx.Add(new TokenRegistrateEx("arOpT", @"(^([+|\-|*|\/])$)"));
                 RegEx.Add(new TokenRegistrateEx("digitT", @"(^((-?\d+)(\,\d*)?)$)"));
+               // RegEx.Add(new TokenRegistrateEx("digitT", @"{[^}]*""id"":(\d+)[^}]*avail:(-\d+)[^}]*cost:\[(\d+)?\][^}]*"));
                 RegEx.Add(new TokenRegistrateEx("equalOpT", @"^(=)$"));
                 RegEx.Add(new TokenRegistrateEx("endT", @"(^(;)$)"));
                 RegEx.Add(new TokenRegistrateEx("spaceT", @"(^\s$)"));
+                RegEx.Add(new TokenRegistrateEx("Error: unknown element", "[$.`'{}<>]"));
+
             }
             
 
@@ -91,16 +94,142 @@ namespace WindowsFormsApplication1
             
         }
 
-        public class Polskalizator {
+        public struct Lexem {
+            public string token1;
+            public string token2;
+            public Lexem(string token1,string token2) {
+                this.token1 = token1;
+                this.token2 = token2;
+            }
+        }
 
-            public int hmpriority(Token t) {
+        public class Lexer
+        {
+
+            List<Lexem> Lexems = new List<Lexem>();
+
+            public Lexer()
+            {
+
+
+                /*RegEx.Add(new TokenRegistrateEx("printT", @"(^print$)"));
+                RegEx.Add(new TokenRegistrateEx("openBracketsT", @"(^\($)"));
+                RegEx.Add(new TokenRegistrateEx("closeBracketsT", @"(^\)$)"));
+                RegEx.Add(new TokenRegistrateEx("varT", @"(^([A-Za-z][A-Za-z0-9]*)$)"));
+                RegEx.Add(new TokenRegistrateEx("arOpT", @"(^([+|\-|*|\/])$)"));
+                RegEx.Add(new TokenRegistrateEx("digitT", @"(^((-?\d+)(\,\d*)?)$)"));
+                RegEx.Add(new TokenRegistrateEx("equalOpT", @"^(=)$"));
+                RegEx.Add(new TokenRegistrateEx("endT", @"(^(;)$)"));
+                RegEx.Add(new TokenRegistrateEx("spaceT", @"(^\s$)"));*/
+
+
+                Lexems.Add(new Lexem("printT", "openBracketsT"));
+
+                Lexems.Add(new Lexem("openBracketsT", "varT"));
+                Lexems.Add(new Lexem("openBracketsT", "digitT"));
+                Lexems.Add(new Lexem("openBracketsT", "spaceT"));
+
+                Lexems.Add(new Lexem("closeBracketsT", "arOpt"));
+                Lexems.Add(new Lexem("closeBracketsT", "equalOpT"));
+                Lexems.Add(new Lexem("closeBracketsT", "endT"));
+                Lexems.Add(new Lexem("closeBracketsT", "spaceT"));
+
+                Lexems.Add(new Lexem("varT", "closeBracketsT"));
+                Lexems.Add(new Lexem("varT", "arOpT"));
+                Lexems.Add(new Lexem("varT", "equalOpT"));
+                Lexems.Add(new Lexem("varT", "endT"));
+                Lexems.Add(new Lexem("varT", "spaceT"));
+
+                Lexems.Add(new Lexem("arOpT", "openBracketsT"));
+                Lexems.Add(new Lexem("arOpT", "varT"));
+                Lexems.Add(new Lexem("arOpT", "digitT"));
+                Lexems.Add(new Lexem("arOpT", "spaceT"));
+
+                Lexems.Add(new Lexem("digitT", "closeBracketsT"));
+                Lexems.Add(new Lexem("digitT", "arOpT"));
+                Lexems.Add(new Lexem("digitT", "endT"));
+                Lexems.Add(new Lexem("digit", "SpaceT"));
+
+                Lexems.Add(new Lexem("equalOpT", "openBracketsT"));
+                Lexems.Add(new Lexem("equalOpT", "varT"));
+                Lexems.Add(new Lexem("equalOpT", "digitT"));
+                Lexems.Add(new Lexem("equalOpT", "SpaceT"));
+
+                Lexems.Add(new Lexem("endT", "printT"));
+                Lexems.Add(new Lexem("end", "openBracketsT"));
+                Lexems.Add(new Lexem("end", "varT"));
+                Lexems.Add(new Lexem("end", "spaceT"));
+
+                Lexems.Add(new Lexem("spaceT", "printT"));
+                Lexems.Add(new Lexem("spaceT", "openBracketsT"));
+                Lexems.Add(new Lexem("spaceT", "closeBracketsT"));
+                Lexems.Add(new Lexem("spaceT", "varT"));
+                Lexems.Add(new Lexem("spaceT", "arOpT"));
+                Lexems.Add(new Lexem("spaceT", "digitT"));
+                Lexems.Add(new Lexem("spaceT", "equalOpT"));
+                Lexems.Add(new Lexem("spaceT", "endT"));
+            }
+
+            private bool IsRightLexem(Token t1, Token t2)
+            {
+
+                foreach (Lexem l in Lexems)
+                {
+                    if ((t1.Name == l.token1) && (t2.Name == l.token2))
+                    {
+                        return true;
+
+                    }
+                }
+                return false;
+
+            }
+
+            public bool Lexe(List<Token> Tokens)
+            {
+                if (Tokens == null) { return true; }
+                if (Tokens[0].Name == "Error: unknown element") { return false; }
+                for (int i = 0; i <= Tokens.Count - 2; i++)
+                {
+                    if (IsRightLexem(Tokens[i], Tokens[i + 1]) == false)
+                        return false;
+
+                }
+                return true;
+
+            }
+
+            public bool BracketsRight(List<Token> Tokens)
+            {
+                int openBracketsT = 0, closeBracketsT = 0;
+                foreach (Token tk in Tokens)
+                {
+                    switch (tk.Name)
+                    {
+                        case "openBracketsT": { openBracketsT++; break; }
+                        case "closeBracketsT": { closeBracketsT++; break; }
+                        default: break;
+                    }
+                }
+
+                if (openBracketsT == closeBracketsT)  return true;
+                else return false;
+
+            }
+
+
+        }
+
+        public class Polskalizator {                                       //making polish string from the list of token's
+
+            public int hmpriority(Token t) {                               //calculate priority for tokens
                 if (t.Value == "/" || t.Value == "*") return 10;
                 if (t.Value == "+" || t.Value == "-") return 9;
                 if (t.Value == "="||t.Value== "print") return 8;
                 else return 0;
             }
 
-            public List<Token> getpolsk (List<Token> nepolsk) {
+            public List<Token> getpolsk (List<Token> nepolsk) {            //return polish string from non-polish string
                 bool toprint = false;
                 List<Token> alreadyPolsk = new List<Token>();
                 Stack<Token> stack = new Stack<Token>();
@@ -141,7 +270,7 @@ namespace WindowsFormsApplication1
             }
         }
 
-        public struct VarHolder {
+        public struct VarHolder {                          //struct to intrepret tokens to VM
             public double value;
             public string name;
 
@@ -176,7 +305,7 @@ namespace WindowsFormsApplication1
 
             int GetVarHolderByNameIndex(string name)
             {
-                for (int i = 0; i < vars.Count - 1; i++)
+                for (int i = 0; i < vars.Count; i++)
                 {
                     if (vars[i].name == name) return i;
                 }
@@ -214,6 +343,7 @@ namespace WindowsFormsApplication1
                                 else
                                 {
                                     stack.Push(new VarHolder(token.Value, GetVarHolderByName(token.Value)));
+                                    
 
                                 }
                             }
@@ -232,7 +362,7 @@ namespace WindowsFormsApplication1
                                 }
                                 else if (token.Value == "-")
                                 {
-                                    stack.Push(new VarHolder("", (op1 - op2)));
+                                    stack.Push(new VarHolder("", (op2 - op1)));
                                 }
                                 else if (token.Value == "*")
                                 {
@@ -291,6 +421,7 @@ namespace WindowsFormsApplication1
         {
 
             Tokenizator tokenezator = new Tokenizator();
+            Lexer lexer = new Lexer();
             Tokens.Text = "";
             Output.Text = "";
             PolskaVudkaDobrovudka.Text = "";
@@ -300,17 +431,25 @@ namespace WindowsFormsApplication1
                 Tokens.Text += t.Name + ", ";
             }
 
-            Polskalizator polskalizator = new Polskalizator();
-            List<Token> polis = polskalizator.getpolsk(tks);
+            if (lexer.BracketsRight(tks)){
 
-            foreach (Token t in polis)
-            {
-                PolskaVudkaDobrovudka.Text += t.Value+ ", ";
+                if (lexer.Lexe(tks))
+                {
+
+                    Polskalizator polskalizator = new Polskalizator();
+                    List<Token> polis = polskalizator.getpolsk(tks);
+
+                    foreach (Token t in polis)
+                    {
+                        PolskaVudkaDobrovudka.Text += t.Value + ", ";
+                    }
+
+                    Machine machine = new Machine();
+                    Output.Text = machine.vmachine(polis);
+                }
+                else Output.Text = "There is some trouble's whith UR sinthax. PLS check it";
             }
-
-            Machine machine = new Machine();
-            Output.Text=machine.vmachine(polis);
-
+            else Output.Text = "U have not equal amount of brackets";
         }
     }
 }
